@@ -131,10 +131,6 @@ type Generator struct {
 // Generate a stub into the opts.Target
 func (s *Generator) Generate(key string, descriptor interface{}) (interface{}, error) {
 
-	// if err := s.checkValid(opts); err != nil {
-	// 	return err
-	// }
-
 	switch desc := descriptor.(type) {
 	case *spec.Parameter:
 		return s.GenParameter(key, desc)
@@ -173,6 +169,7 @@ func (s *Generator) GenParameter(key string, param *spec.Parameter) (interface{}
 	return datagen(gopts)
 }
 
+// GenHeader generates a random value for a header
 func (s *Generator) GenHeader(key string, header *spec.Header) (interface{}, error) {
 	generator, err := newGenerator(s.Language)
 	if err != nil {
@@ -192,6 +189,7 @@ func (s *Generator) GenHeader(key string, header *spec.Header) (interface{}, err
 	return datagen(gopts)
 }
 
+// GenSchema generates a random value for a schema
 func (s *Generator) GenSchema(key string, schema *spec.Schema) (interface{}, error) {
 	return nil, nil
 }
@@ -260,15 +258,22 @@ func itemsGenOpts(key string, items *spec.Items) (*simpleOpts, error) {
 type GeneratorOpts interface {
 	// value generator name
 	Name() string
-	// arguments for the value generator (eg. number of words in a sentence)
+
+	// Args for the value generator (eg. number of words in a sentence)
+	// Arguments here are used to generate a valid value when no validations are specified.
+	// Args are used as default setting but validations can override the args should that be necessary.
 	Args() []interface{}
+
 	// FieldName for the value generator, this is mostly used as an alternative to the name
 	// for inferring which value generator to use
 	FieldName() string
+
 	// Type for the value generator to return, adids in inferring the name of the value generator
 	Type() string
+
 	// Format for the value generator to return, aids in inferring the name of the value generator
 	Format() string
+
 	// CollectionFormat how a collection is represented (csv, pipes, ...)
 	CollectionFormat() string
 
@@ -278,26 +283,37 @@ type GeneratorOpts interface {
 
 	// Maximum a numeric value can have, returns value, exclusive, defined
 	Maximum() (float64, bool, bool)
+
 	// Minimum a numeric value can have, returns value, exclusive, defined
 	Minimum() (float64, bool, bool)
+
 	// MaxLength a string can have, returns value, defined
 	MaxLength() (int64, bool)
+
 	// MinLength a string can have, returns value, defined
 	MinLength() (int64, bool)
+
 	// Pattern a string should match, returns value, defined
 	Pattern() (string, bool)
+
 	// MaxItems a collection of values can contain, returns length, defined
 	MaxItems() (int64, bool)
+
 	// MinItems a collection of values must contain, returns length, defined
 	MinItems() (int64, bool)
+
 	// UniqueItems when true the collection can't contain duplicates
 	UniqueItems() bool
+
 	// MultipleOf a numeric value should be divisible by this value, returns value, defined
 	MultipleOf() (float64, bool)
+
 	// Enum a list of acceptable values for a value, returns value, defined
 	Enum() ([]interface{}, bool)
+
 	// Items options for the members of a collection
 	Items() (GeneratorOpts, error)
+
 	// Required when true the property can't be nil
 	Required() bool
 }
