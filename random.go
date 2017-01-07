@@ -56,8 +56,8 @@ func RegisterAltGenNames(key string, alts ...string) {
 	}
 }
 
-// DataGenerator represents a function to generate a piece of random data
-type DataGenerator func(...interface{}) (interface{}, error)
+// ValueGenerator represents a function to generate a piece of random data
+type ValueGenerator func(GeneratorOpts) (interface{}, error)
 
 func newGenerator(lang string) (*generators, error) {
 	if lang == "" {
@@ -78,68 +78,68 @@ func newGenerator(lang string) (*generators, error) {
 type generators struct {
 	faker *faker.Faker
 	conv  conv.Converter
-	gens  map[string]DataGenerator
+	gens  map[string]ValueGenerator
 }
 
 func (g *generators) makeGenerators() {
-	g.gens = map[string]DataGenerator{
-		"characters":        g.wi(g.faker.Characters),
-		"noun":              g.ws(randomdata.Noun),
-		"adjective":         g.ws(randomdata.Noun),
-		"word":              g.ws(func() string { return g.faker.Words(1, false)[0] }),
-		"words":             g.wibs(g.faker.Words),
-		"sentence":          g.wib(g.faker.Sentence),
-		"sentences":         g.wibs(g.faker.Sentences),
-		"paragraph":         g.wib(g.faker.Paragraph),
-		"paragraphs":        g.wibs(g.faker.Paragraphs),
-		"city":              g.ws(g.faker.City),
-		"street-name":       g.ws(g.faker.StreetName),
-		"street-address":    g.ws(g.faker.StreetAddress),
-		"secondary-address": g.ws(g.faker.SecondaryAddress),
-		"postcode":          g.ws(g.faker.PostCode),
-		"street-suffix":     g.ws(g.faker.StreetSuffix),
-		"city-suffix":       g.ws(g.faker.CitySuffix),
-		"city-prefix":       g.ws(g.faker.CityPrefix),
-		"state":             g.ws(g.faker.StateAbbr),
-		"state-name":        g.ws(g.faker.State),
-		"country":           g.ws(g.faker.Country),
-		"latitude":          g.wf(g.faker.Latitude),
-		"longitude":         g.wf(g.faker.Longitude),
-		"company":           g.ws(g.faker.CompanyName),
-		"company-suffix":    g.ws(g.faker.CompanySuffix),
-		"company-slogan":    g.ws(g.faker.CompanyCatchPhrase),
-		"company-bs":        g.ws(g.faker.CompanyBs),
-		"landline":          g.ws(g.faker.PhoneNumber),
-		"mobile":            g.ws(g.faker.CellPhoneNumber),
-		"email":             g.ws(g.faker.Email),
-		"free-email":        g.ws(g.faker.FreeEmail),
-		"safe-email":        g.ws(g.faker.SafeEmail),
-		"user-name":         g.ws(g.faker.UserName),
-		"hostname":          g.ws(g.faker.DomainWord),
-		"domain":            g.ws(g.faker.DomainName),
-		"domain-suffix":     g.ws(g.faker.DomainSuffix),
-		"ipv4":              g.ws(randomdata.IpV4Address),
-		"ipv6":              g.ws(randomdata.IpV6Address),
+	g.gens = map[string]ValueGenerator{
+		"characters":        g.intString(g.faker.Characters),
+		"noun":              g.string(randomdata.Noun),
+		"adjective":         g.string(randomdata.Noun),
+		"word":              g.string(func() string { return g.faker.Words(1, false)[0] }),
+		"words":             g.intBoolStrings(g.faker.Words),
+		"sentence":          g.intBoolString(g.faker.Sentence),
+		"sentences":         g.intBoolStrings(g.faker.Sentences),
+		"paragraph":         g.intBoolString(g.faker.Paragraph),
+		"paragraphs":        g.intBoolStrings(g.faker.Paragraphs),
+		"city":              g.string(g.faker.City),
+		"street-name":       g.string(g.faker.StreetName),
+		"street-address":    g.string(g.faker.StreetAddress),
+		"secondary-address": g.string(g.faker.SecondaryAddress),
+		"postcode":          g.string(g.faker.PostCode),
+		"street-suffix":     g.string(g.faker.StreetSuffix),
+		"city-suffix":       g.string(g.faker.CitySuffix),
+		"city-prefix":       g.string(g.faker.CityPrefix),
+		"state":             g.string(g.faker.StateAbbr),
+		"state-name":        g.string(g.faker.State),
+		"country":           g.string(g.faker.Country),
+		"latitude":          g.float(g.faker.Latitude),
+		"longitude":         g.float(g.faker.Longitude),
+		"company":           g.string(g.faker.CompanyName),
+		"company-suffix":    g.string(g.faker.CompanySuffix),
+		"company-slogan":    g.string(g.faker.CompanyCatchPhrase),
+		"company-bs":        g.string(g.faker.CompanyBs),
+		"landline":          g.string(g.faker.PhoneNumber),
+		"mobile":            g.string(g.faker.CellPhoneNumber),
+		"email":             g.string(g.faker.Email),
+		"free-email":        g.string(g.faker.FreeEmail),
+		"safe-email":        g.string(g.faker.SafeEmail),
+		"user-name":         g.string(g.faker.UserName),
+		"hostname":          g.string(g.faker.DomainWord),
+		"domain":            g.string(g.faker.DomainName),
+		"domain-suffix":     g.string(g.faker.DomainSuffix),
+		"ipv4":              g.string(randomdata.IpV4Address),
+		"ipv6":              g.string(randomdata.IpV6Address),
 		"ip":                g.altws(randomdata.IpV4Address, randomdata.IpV6Address),
-		"name":              g.ws(g.faker.Name),
-		"silly-name":        g.ws(randomdata.SillyName),
-		"first-name":        g.ws(g.faker.FirstName),
-		"last-name":         g.ws(g.faker.LastName),
-		"name-prefix":       g.ws(g.faker.NamePrefix),
-		"name-suffix":       g.ws(g.faker.NameSuffix),
-		"job-title":         g.ws(g.faker.JobTitle),
-		"credit-card":       g.wsp(govalidator.CreditCard),
+		"name":              g.string(g.faker.Name),
+		"silly-name":        g.string(randomdata.SillyName),
+		"first-name":        g.string(g.faker.FirstName),
+		"last-name":         g.string(g.faker.LastName),
+		"name-prefix":       g.string(g.faker.NamePrefix),
+		"name-suffix":       g.string(g.faker.NameSuffix),
+		"job-title":         g.string(g.faker.JobTitle),
+		"credit-card":       g.fromPattern(govalidator.CreditCard),
 		"isbn":              g.altwsp(govalidator.ISBN10, govalidator.ISBN13),
-		"isbn10":            g.wsp(govalidator.ISBN10),
-		"isbn13":            g.wsp(govalidator.ISBN13),
-		"ssn":               g.wsp(govalidator.SSN),
-		"hexcolor":          g.wsp(govalidator.Hexcolor),
-		"rgbcolor":          g.wsp(govalidator.RGBcolor),
-		"mac-address":       g.wsp("^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$"),
-		"uuid":              g.wsp(strfmt.UUIDPattern),
-		"uuid3":             g.wsp(strfmt.UUID3Pattern),
-		"uuid4":             g.wsp(strfmt.UUID4Pattern),
-		"uuid5":             g.wsp(strfmt.UUID5Pattern),
+		"isbn10":            g.fromPattern(govalidator.ISBN10),
+		"isbn13":            g.fromPattern(govalidator.ISBN13),
+		"ssn":               g.fromPattern(govalidator.SSN),
+		"hexcolor":          g.fromPattern(govalidator.Hexcolor),
+		"rgbcolor":          g.fromPattern(govalidator.RGBcolor),
+		"mac-address":       g.fromPattern("^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$"),
+		"uuid":              g.fromPattern(strfmt.UUIDPattern),
+		"uuid3":             g.fromPattern(strfmt.UUID3Pattern),
+		"uuid4":             g.fromPattern(strfmt.UUID4Pattern),
+		"uuid5":             g.fromPattern(strfmt.UUID5Pattern),
 	}
 
 	/* TODO:
@@ -160,7 +160,7 @@ func normalizeGeneratorName(str string) string {
 	return kn
 }
 
-func (g *generators) For(opts GeneratorOpts) (DataGenerator, bool) {
+func (g *generators) For(opts GeneratorOpts) (ValueGenerator, bool) {
 	if gen, ok := g.gens[normalizeGeneratorName(opts.Name())]; ok {
 		return gen, true
 	}
@@ -175,52 +175,53 @@ func seedAndReturnRandom(n int) int {
 	return rand.Intn(n)
 }
 
-func (g *generators) altws(fns ...func() string) DataGenerator {
-	return func(_ ...interface{}) (interface{}, error) {
+func (g *generators) altws(fns ...func() string) ValueGenerator {
+	return func(opts GeneratorOpts) (interface{}, error) {
 		idx := seedAndReturnRandom(len(fns))
 		return fns[idx](), nil
 	}
 }
 
-func (g *generators) altwsp(patterns ...string) DataGenerator {
-	return func(_ ...interface{}) (interface{}, error) {
+func (g *generators) altwsp(patterns ...string) ValueGenerator {
+	return func(opts GeneratorOpts) (interface{}, error) {
 		idx := seedAndReturnRandom(len(patterns))
 		return regen.Generate(patterns[idx])
 	}
 }
 
-func (g *generators) wsp(pattern string) DataGenerator {
-	return func(_ ...interface{}) (interface{}, error) {
+func (g *generators) fromPattern(pattern string) ValueGenerator {
+	return func(opts GeneratorOpts) (interface{}, error) {
 		return regen.Generate(pattern)
 	}
 }
 
-func (g *generators) wse(fn func() (string, error)) DataGenerator {
-	return func(_ ...interface{}) (interface{}, error) {
+func (g *generators) stringError(fn func() (string, error)) ValueGenerator {
+	return func(opts GeneratorOpts) (interface{}, error) {
 		return fn()
 	}
 }
 
-func (g *generators) ws(fn func() string) DataGenerator {
-	return func(_ ...interface{}) (interface{}, error) {
+func (g *generators) string(fn func() string) ValueGenerator {
+	return func(opts GeneratorOpts) (interface{}, error) {
 		return fn(), nil
 	}
 }
 
-func (g *generators) wss(fn func() fmt.Stringer) DataGenerator {
-	return func(_ ...interface{}) (interface{}, error) {
+func (g *generators) stringer(fn func() fmt.Stringer) ValueGenerator {
+	return func(opts GeneratorOpts) (interface{}, error) {
 		return fn().String(), nil
 	}
 }
 
-func (g *generators) wf(fn func() float64) DataGenerator {
-	return func(_ ...interface{}) (interface{}, error) {
+func (g *generators) float(fn func() float64) ValueGenerator {
+	return func(opts GeneratorOpts) (interface{}, error) {
 		return fn(), nil
 	}
 }
 
-func (g *generators) wi(fn func(int) string) DataGenerator {
-	return func(args ...interface{}) (interface{}, error) {
+func (g *generators) intString(fn func(int) string) ValueGenerator {
+	return func(opts GeneratorOpts) (interface{}, error) {
+		args := opts.Args()
 		count := 10
 		if len(args) > 0 {
 			i, err := g.conv.Int(args[0])
@@ -234,8 +235,9 @@ func (g *generators) wi(fn func(int) string) DataGenerator {
 	}
 }
 
-func (g *generators) wib(fn func(int, bool) string) DataGenerator {
-	return func(args ...interface{}) (interface{}, error) {
+func (g *generators) intBoolString(fn func(int, bool) string) ValueGenerator {
+	return func(opts GeneratorOpts) (interface{}, error) {
+		args := opts.Args()
 		count := 10
 		if len(args) > 0 {
 			i, err := g.conv.Int(args[0])
@@ -257,8 +259,9 @@ func (g *generators) wib(fn func(int, bool) string) DataGenerator {
 	}
 }
 
-func (g *generators) wibs(fn func(int, bool) []string) DataGenerator {
-	return func(args ...interface{}) (interface{}, error) {
+func (g *generators) intBoolStrings(fn func(int, bool) []string) ValueGenerator {
+	return func(opts GeneratorOpts) (interface{}, error) {
+		args := opts.Args()
 		count := 10
 		if len(args) > 0 {
 			i, err := g.conv.Int(args[0])

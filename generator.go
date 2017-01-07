@@ -2,7 +2,6 @@ package stubs
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/go-openapi/spec"
 	"github.com/go-openapi/swag"
@@ -11,6 +10,11 @@ import (
 
 // StubMode for generating data
 type StubMode uint64
+
+// Has returns true when this mode has the provided flag configured
+func (s StubMode) Has(m StubMode) bool {
+	return s&m != 0
+}
 
 const (
 	// Invalid produces a stub which is invalid for a random validation
@@ -42,14 +46,7 @@ const (
 	Valid StubMode = 0
 )
 
-// type StubOpts struct {
-// 	Mode       StubMode
-// 	Language   string
-// 	Descriptor interface{} // spec.Schema, spec.Header, spec.Parameter
-// 	Target     interface{}
-// }
-
-type generatorOpts struct {
+type simpleOpts struct {
 	spec.CommonValidations
 	spec.SimpleSchema
 
@@ -57,78 +54,82 @@ type generatorOpts struct {
 	args      []interface{}
 	fieldName string
 	required  bool
+	mode      StubMode
 }
 
-func (g *generatorOpts) Args() []interface{} {
+func (g *simpleOpts) Mode() StubMode {
+	return g.mode
+}
+
+func (g *simpleOpts) Args() []interface{} {
 	return g.args
 }
 
-func (g *generatorOpts) GoType() reflect.Type {
-	return nil
-}
-func (g *generatorOpts) CollectionFormat() string {
+func (g *simpleOpts) CollectionFormat() string {
 	return g.SimpleSchema.CollectionFormat
 }
 
-func (g *generatorOpts) Name() string {
+func (g *simpleOpts) Name() string {
 	return g.name
 }
-func (g *generatorOpts) FieldName() string {
+func (g *simpleOpts) FieldName() string {
 	return g.fieldName
 }
-func (g *generatorOpts) Maximum() (float64, bool, bool) {
+func (g *simpleOpts) Maximum() (float64, bool, bool) {
 	return swag.Float64Value(g.CommonValidations.Maximum), g.CommonValidations.ExclusiveMaximum, g.CommonValidations.Maximum != nil
 }
-func (g *generatorOpts) Minimum() (float64, bool, bool) {
+func (g *simpleOpts) Minimum() (float64, bool, bool) {
 	return swag.Float64Value(g.CommonValidations.Minimum), g.CommonValidations.ExclusiveMinimum, g.CommonValidations.Minimum != nil
 }
-func (g *generatorOpts) MaxLength() (int64, bool) {
+func (g *simpleOpts) MaxLength() (int64, bool) {
 	return swag.Int64Value(g.CommonValidations.MaxLength), g.CommonValidations.MaxLength != nil
 }
-func (g *generatorOpts) MinLength() (int64, bool) {
+func (g *simpleOpts) MinLength() (int64, bool) {
 	return swag.Int64Value(g.CommonValidations.MinLength), g.CommonValidations.MinLength != nil
 }
-func (g *generatorOpts) Pattern() (string, bool) {
+func (g *simpleOpts) Pattern() (string, bool) {
 	return g.CommonValidations.Pattern, g.CommonValidations.Pattern != ""
 }
-func (g *generatorOpts) MaxItems() (int64, bool) {
+func (g *simpleOpts) MaxItems() (int64, bool) {
 	mx := g.CommonValidations.MaxItems
 	return swag.Int64Value(mx), mx != nil
 }
-func (g *generatorOpts) MinItems() (int64, bool) {
+func (g *simpleOpts) MinItems() (int64, bool) {
 	mn := g.CommonValidations.MinItems
 	return swag.Int64Value(mn), mn != nil
 }
-func (g *generatorOpts) UniqueItems() bool {
+func (g *simpleOpts) UniqueItems() bool {
 	return g.CommonValidations.UniqueItems
 }
-func (g *generatorOpts) MultipleOf() (float64, bool) {
+func (g *simpleOpts) MultipleOf() (float64, bool) {
 	mo := g.CommonValidations.MultipleOf
 	return swag.Float64Value(mo), mo != nil
 }
-func (g *generatorOpts) Enum() ([]interface{}, bool) {
+func (g *simpleOpts) Enum() ([]interface{}, bool) {
 	enm := g.CommonValidations.Enum
 	return enm, len(enm) > 0
 }
-func (g *generatorOpts) Type() string {
+func (g *simpleOpts) Type() string {
 	return g.SimpleSchema.Type
 }
-func (g *generatorOpts) Format() string {
+func (g *simpleOpts) Format() string {
 	return g.SimpleSchema.Format
 }
-func (g *generatorOpts) Items() (GeneratorOpts, error) {
+func (g *simpleOpts) Items() (GeneratorOpts, error) {
 	return itemsGenOpts(g.name+".items", g.SimpleSchema.Items)
 }
-func (g *generatorOpts) Required() bool {
+func (g *simpleOpts) Required() bool {
 	return g.required
 }
 
-type Stubbing struct {
+// Generator generates a stub for a descriptor.
+// A descriptor can either be a parameter, response header or json schema
+type Generator struct {
 	Language string
 }
 
 // Generate a stub into the opts.Target
-func (s *Stubbing) Generate(key string, descriptor interface{}) (interface{}, error) {
+func (s *Generator) Generate(key string, descriptor interface{}) (interface{}, error) {
 
 	// if err := s.checkValid(opts); err != nil {
 	// 	return err
@@ -148,11 +149,12 @@ func (s *Stubbing) Generate(key string, descriptor interface{}) (interface{}, er
 	case spec.Schema:
 		return s.GenSchema(key, &desc)
 	default:
-		return nil, fmt.Errorf("%T is unsupported for stubbing", descriptor)
+		return nil, fmt.Errorf("%T is unsupported for Generator", descriptor)
 	}
 }
 
-func (s *Stubbing) GenParameter(key string, param *spec.Parameter) (interface{}, error) {
+// GenParameter generates a random value for a parameter
+func (s *Generator) GenParameter(key string, param *spec.Parameter) (interface{}, error) {
 	generator, err := newGenerator(s.Language)
 	if err != nil {
 		return nil, err
@@ -168,10 +170,10 @@ func (s *Stubbing) GenParameter(key string, param *spec.Parameter) (interface{},
 		return nil, fmt.Errorf("no generator found for parameter [%s]", param.Name)
 	}
 
-	return datagen(gopts.Args()...)
+	return datagen(gopts)
 }
 
-func (s *Stubbing) GenHeader(key string, header *spec.Header) (interface{}, error) {
+func (s *Generator) GenHeader(key string, header *spec.Header) (interface{}, error) {
 	generator, err := newGenerator(s.Language)
 	if err != nil {
 		return nil, err
@@ -187,14 +189,14 @@ func (s *Stubbing) GenHeader(key string, header *spec.Header) (interface{}, erro
 		return nil, fmt.Errorf("no generator found for header [%s]", key)
 	}
 
-	return datagen(gopts.Args()...)
+	return datagen(gopts)
 }
 
-func (s *Stubbing) GenSchema(key string, schema *spec.Schema) (interface{}, error) {
+func (s *Generator) GenSchema(key string, schema *spec.Schema) (interface{}, error) {
 	return nil, nil
 }
 
-func paramGenOpts(key string, param *spec.Parameter) (*generatorOpts, error) {
+func paramGenOpts(key string, param *spec.Parameter) (*simpleOpts, error) {
 	var gopts genOpts
 	if ext, ok := param.Extensions["x-datagen"]; ok {
 		if err := mapstructure.WeakDecode(ext, &gopts); err != nil {
@@ -205,7 +207,7 @@ func paramGenOpts(key string, param *spec.Parameter) (*generatorOpts, error) {
 	if key == "" {
 		key = param.Name
 	}
-	return &generatorOpts{
+	return &simpleOpts{
 		name:              gopts.Name,
 		args:              gopts.Args,
 		fieldName:         key,
@@ -220,14 +222,14 @@ type genOpts struct {
 	Args []interface{} `mapstructure:"args"`
 }
 
-func headerGenOpts(key string, header *spec.Header) (*generatorOpts, error) {
+func headerGenOpts(key string, header *spec.Header) (*simpleOpts, error) {
 	var gopts genOpts
 	if ext, ok := header.Extensions["x-datagen"]; ok {
 		if err := mapstructure.WeakDecode(ext, &gopts); err != nil {
 			return nil, err
 		}
 	}
-	return &generatorOpts{
+	return &simpleOpts{
 		name:              gopts.Name,
 		args:              gopts.Args,
 		fieldName:         key,
@@ -237,14 +239,14 @@ func headerGenOpts(key string, header *spec.Header) (*generatorOpts, error) {
 	}, nil
 }
 
-func itemsGenOpts(key string, items *spec.Items) (*generatorOpts, error) {
+func itemsGenOpts(key string, items *spec.Items) (*simpleOpts, error) {
 	var gopts genOpts
 	if ext, ok := items.Extensions["x-datagen"]; ok {
 		if err := mapstructure.WeakDecode(ext, &gopts); err != nil {
 			return nil, err
 		}
 	}
-	return &generatorOpts{
+	return &simpleOpts{
 		name:              gopts.Name,
 		args:              gopts.Args,
 		fieldName:         key,
@@ -254,23 +256,48 @@ func itemsGenOpts(key string, items *spec.Items) (*generatorOpts, error) {
 	}, nil
 }
 
+// GeneratorOpts interface to capture various types that can get data generated for them.
 type GeneratorOpts interface {
+	// value generator name
 	Name() string
+	// arguments for the value generator (eg. number of words in a sentence)
 	Args() []interface{}
+	// FieldName for the value generator, this is mostly used as an alternative to the name
+	// for inferring which value generator to use
 	FieldName() string
-	Maximum() (float64, bool, bool)
-	Minimum() (float64, bool, bool)
-	MaxLength() (int64, bool)
-	MinLength() (int64, bool)
-	Pattern() (string, bool)
-	MaxItems() (int64, bool)
-	MinItems() (int64, bool)
-	UniqueItems() bool
-	MultipleOf() (float64, bool)
-	Enum() ([]interface{}, bool)
+	// Type for the value generator to return, adids in inferring the name of the value generator
 	Type() string
+	// Format for the value generator to return, aids in inferring the name of the value generator
 	Format() string
-	Items() (GeneratorOpts, error)
+	// CollectionFormat how a collection is represented (csv, pipes, ...)
 	CollectionFormat() string
+
+	// Mode which kind of random data to return and to indicate which validation(s) should fail.
+	// This is a bitmask so it allows for combinations of invalid values.
+	Mode() StubMode
+
+	// Maximum a numeric value can have, returns value, exclusive, defined
+	Maximum() (float64, bool, bool)
+	// Minimum a numeric value can have, returns value, exclusive, defined
+	Minimum() (float64, bool, bool)
+	// MaxLength a string can have, returns value, defined
+	MaxLength() (int64, bool)
+	// MinLength a string can have, returns value, defined
+	MinLength() (int64, bool)
+	// Pattern a string should match, returns value, defined
+	Pattern() (string, bool)
+	// MaxItems a collection of values can contain, returns length, defined
+	MaxItems() (int64, bool)
+	// MinItems a collection of values must contain, returns length, defined
+	MinItems() (int64, bool)
+	// UniqueItems when true the collection can't contain duplicates
+	UniqueItems() bool
+	// MultipleOf a numeric value should be divisible by this value, returns value, defined
+	MultipleOf() (float64, bool)
+	// Enum a list of acceptable values for a value, returns value, defined
+	Enum() ([]interface{}, bool)
+	// Items options for the members of a collection
+	Items() (GeneratorOpts, error)
+	// Required when true the property can't be nil
 	Required() bool
 }
