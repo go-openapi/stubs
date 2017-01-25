@@ -1,6 +1,10 @@
 package stubs
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestGenerators_Get(t *testing.T) {
 	// gen, err := newGenerator("")
@@ -26,4 +30,30 @@ func TestGenerators_Get(t *testing.T) {
 	// 	}
 	// }
 	// }
+}
+
+func TestGeneratorsBool(t *testing.T) {
+	gen, err := newGenerator("")
+	if assert.NoError(t, err) {
+		boolfn, found := gen.For(&simpleOpts{name: "bool"})
+		if assert.True(t, found) {
+			for i := 0; i < 64; i++ {
+				result, err := boolfn(new(simpleOpts))
+				if assert.NoError(t, err) {
+					_, ok := result.(bool)
+					assert.True(t, ok)
+				}
+			}
+		}
+		boolfn, found = gen.For(&simpleOpts{name: "boolean"})
+		if assert.True(t, found) {
+			for i := 0; i < 32; i++ {
+				result, err := boolfn(new(simpleOpts))
+				if assert.NoError(t, err) {
+					_, ok := result.(bool)
+					assert.True(t, ok)
+				}
+			}
+		}
+	}
 }
