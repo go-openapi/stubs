@@ -16,6 +16,16 @@ In the openapi 2.0 specification there are 2 families of types that can be used 
 
 These 2 families warrant slightly different strategies for getting the necessary parameters for a datagenerator.
 
+## Functionality
+
+To generate meaningful random data the library looks at the schema and based on properties for that schema it picks an appropriate random value generator.
+This means that when it is generating a string for an object property that represents a first name it should pick a data generator that generates first names.
+Similarly should a property be called city it should generate a city name.
+
+It's possible that the validity of a particular property is dependent on the value of another property, for example a creation date is typically never larger than a modified date.
+
+A data generator for a schema should be able to generate valid and invalid data, ideally there is control for specifying the value is invalid for a particular validation. This will help in tests to validate error codes
+
 ## How does it work
 
 The main components in this library are a registry of datagenerators so they are addressable by keys, aliases for those keys to aid with inferring which datagenerator to use.
