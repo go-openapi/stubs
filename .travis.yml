@@ -13,6 +13,8 @@ install:
 - go get -u github.com/zach-klippenstein/goregen
 - go get -u github.com/manveru/faker
 - go get -u github.com/Pallinder/go-randomdata
+- go get -u github.com/cstockton/go-conv
+- go get -u github.com/asaskevich/govalidator
 script:
 - go test -v -race -cover -coverprofile=coverage.txt -covermode=atomic ./...
 after_success:
