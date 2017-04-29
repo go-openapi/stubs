@@ -6,30 +6,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenerators_Get(t *testing.T) {
-	// gen, err := newGenerator("")
-	// if assert.NoError(t, err) {
+func TestGenerators_Characters(t *testing.T) {
+	gen, err := newGenerator("")
+	if assert.NoError(t, err) {
+		opts := &simpleOpts{name: "characters"}
+		fn, found := gen.For(opts)
 
-	// fn, found := gen.For(&generatorOpts{
-	// 	GeneratorOpts: GeneratorOpts{
-	// 		Name: "characters",
-	// 	},
-	// })
-
-	// if assert.True(t, found) {
-	// 	res, err := fn()
-	// 	if assert.NoError(t, err) {
-	// 		assert.IsType(t, "", res)
-	// 		assert.Len(t, res, 10)
-	// 	}
-
-	// 	res, err = fn(15)
-	// 	if assert.NoError(t, err) {
-	// 		assert.IsType(t, "", res)
-	// 		assert.Len(t, res, 15)
-	// 	}
-	// }
-	// }
+		if assert.True(t, found) {
+			res, err := fn(opts)
+			if assert.NoError(t, err) {
+				assert.IsType(t, "", res)
+				assert.Len(t, res, 10)
+			}
+			opts.args = append(opts.args, 15)
+			res, err = fn(opts)
+			if assert.NoError(t, err) {
+				assert.IsType(t, "", res)
+				assert.Len(t, res, 15)
+			}
+		}
+	}
 }
 
 func TestGeneratorsBool(t *testing.T) {
@@ -40,8 +36,7 @@ func TestGeneratorsBool(t *testing.T) {
 			for i := 0; i < 64; i++ {
 				result, err := boolfn(new(simpleOpts))
 				if assert.NoError(t, err) {
-					_, ok := result.(bool)
-					assert.True(t, ok)
+					assert.IsType(t, true, result)
 				}
 			}
 		}
@@ -50,8 +45,7 @@ func TestGeneratorsBool(t *testing.T) {
 			for i := 0; i < 32; i++ {
 				result, err := boolfn(new(simpleOpts))
 				if assert.NoError(t, err) {
-					_, ok := result.(bool)
-					assert.True(t, ok)
+					assert.IsType(t, true, result)
 				}
 			}
 		}
