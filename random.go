@@ -44,6 +44,7 @@ func init() {
 	RegisterAltGenNames("uuid4", "uuidv4")
 	RegisterAltGenNames("uuid3", "uuidv3")
 	RegisterAltGenNames("uuid5", "uuidv5")
+	RegisterAltGenNames("bool", "boolean")
 }
 
 // RegisterAltGenNames registers alternatives for a generator name
@@ -140,6 +141,7 @@ func (g *generators) makeGenerators() {
 		"uuid3":             g.fromPattern(strfmt.UUID3Pattern),
 		"uuid4":             g.fromPattern(strfmt.UUID4Pattern),
 		"uuid5":             g.fromPattern(strfmt.UUID5Pattern),
+		"bool":              g.bool,
 	}
 
 	/* TODO:
@@ -281,4 +283,9 @@ func (g *generators) intBoolStrings(fn func(int, bool) []string) ValueGenerator 
 
 		return fn(count, supplemental), nil
 	}
+}
+
+func (g *generators) bool(opts GeneratorOpts) (interface{}, error) {
+	answer := seedAndReturnRandom(2) == 2
+	return answer, nil
 }

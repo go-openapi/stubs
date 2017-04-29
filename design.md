@@ -1,7 +1,7 @@
 # Stubs design
 
-The goal of this library is to be able to generate somewhat good looking random data for structures defined in an openapi or jsonschema document. 
-These can be used to provide an api with stubs so that you can verify valid and invalid request/responses without an actually meaningful implementation. 
+The goal of this library is to be able to generate somewhat good looking random data for structures defined in an openapi or jsonschema document.
+These can be used to provide an api with stubs so that you can verify valid and invalid request/responses without an actually meaningful implementation.
 Some areas where this is useful are collaboration between different teams so that all teams can do work without having to wait on the delivery of the completed implementation of the API.
 A second area where this is obviously useful is for doing automated tests and filling up datastructures for use in those tests.
 
@@ -35,7 +35,7 @@ In the openapi API document and in a json schema document there is a vendor exte
 
 ### Value generator function
 
-There are 2 types of data enerators but they both have the same function signature.
+There are 2 types of data generators but they both have the same function signature.
 There are value generators and there are composite value generators.
 
 * A value generator generates a single value for a simple type.
@@ -47,12 +47,12 @@ The signature for the value generator is:
 type ValueGenerator func(GeneratorOpts) (interface{}, error)
 ```
 
-A value generator is the innermost component in the library and the arguments to the function are used to configure the generato
+A value generator is the innermost component in the library and the arguments to the function are used to configure the generator.
 The generation process for a generator is configured through a GeneratorOpts interface.
 
 ### GeneratorOpts interface
 
-The generator options describe the type and potentialy the format for the value that needs to be generated.
+The generator options describe the type and potentially the format for the value that needs to be generated.
 In addition to the type information it also captures the field name or definition name of the value that needs to be generated.
 
 ### StubMode
@@ -61,4 +61,4 @@ The stubmode bitmask allows for configuring which validations should fail for a 
 
 ### Generator
 
-The generator is the main entry point for the librare and it's Generate method is what will generate the random value for the descriptor.
+The generator is the main entry point for the library and its Generate method is what will generate the random value for the descriptor.
