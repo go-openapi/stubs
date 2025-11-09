@@ -5,3 +5,7 @@
 
 A library to generate random data for a swagger specification.
 This is a building block for generating stubs for your API as well as tests.
+
+**Project archived on 2025/11/09**
+
+Generating mock data driven by an API spec remains a topic of interest.
